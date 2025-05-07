@@ -47,6 +47,12 @@ class StockCalcApp extends StatelessWidget {
         WidgetBuilder builder;
         Map<String, dynamic>? args = settings.arguments as Map<String, dynamic>?;
         switch (settings.name) {
+          case '/home':
+            builder = (_) => HomePage();
+            break;
+          case '/about':
+            builder = (_) => AboutPage();
+            break;
           case '/stockName':
             builder = (_) => StockNamePage();
             break;
@@ -96,7 +102,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void initState() {
     super.initState();
     Future.delayed(Duration(seconds: 2), () {
-      Navigator.of(context).pushReplacementNamed('/stockName');
+      Navigator.of(context).pushReplacementNamed('/home');
     });
   }
 
@@ -124,6 +130,147 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 }
 
+class HeaderFooterScaffold extends StatelessWidget {
+  final Widget child;
+  final bool showBack;
+  const HeaderFooterScaffold({required this.child, this.showBack = false, Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: Colors.black,
+              child: Row(
+                children: [
+                  if (showBack)
+                    IconButton(
+                      icon: Icon(Icons.arrow_back, color: Colors.orange),
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
+                  SizedBox(width: showBack ? 0 : 12),
+                  Text(
+                    'StockCalc',
+                    style: TextStyle(
+                      color: Colors.orange,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(child: child),
+            Container(
+              color: Colors.black,
+              padding: EdgeInsets.symmetric(vertical: 10),
+              child: Center(
+                child: Text.rich(
+                  TextSpan(
+                    text: 'Desenvolvido com ',
+                    style: TextStyle(color: Colors.white70, fontSize: 14),
+                    children: [
+                      WidgetSpan(
+                        child: Icon(Icons.favorite, color: Colors.red, size: 16),
+                      ),
+                      TextSpan(
+                        text: ' por Pedro Lazzaroni, Pedro Bevilaqua e Guilherme Biajoli.',
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HeaderFooterScaffold(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/stockName');
+              },
+              child: Text('Iniciar'),
+            ),
+            SizedBox(height: 24),
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(context).pushNamed('/about');
+              },
+              style: OutlinedButton.styleFrom(
+                side: BorderSide(color: Colors.orange),
+                foregroundColor: Colors.orange,
+              ),
+              child: Text('Sobre'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class AboutPage extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return HeaderFooterScaffold(
+      showBack: true,
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: ListView(
+          children: [
+            Text(
+              'Sobre o StockCalc',
+              style: TextStyle(color: Colors.orange, fontSize: 22, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 16),
+            Text(
+              'O StockCalc é um aplicativo para simular investimentos em ações de forma simples e rápida. Você insere o nome da ação, a rentabilidade média anual, o preço atual, o valor a investir e o tempo. O app calcula o valor futuro estimado do seu investimento.',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Criadores:',
+              style: TextStyle(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Pedro Lazzaroni\nPedro Bevilaqua\nGuilherme Biajoli',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+            SizedBox(height: 24),
+            Text(
+              'Como funciona:',
+              style: TextStyle(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 8),
+            Text(
+              '1. Clique em Iniciar e siga as etapas para inserir os dados.\n2. Veja o resultado do cálculo ao final.\n3. Use o botão Recomeçar para simular novamente.',
+              style: TextStyle(color: Colors.white70, fontSize: 16),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class StockNamePage extends StatefulWidget {
   @override
   _StockNamePageState createState() => _StockNamePageState();
@@ -135,14 +282,8 @@ class _StockNamePageState extends State<StockNamePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Nome da Ação'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.orange,
-        centerTitle: true,
-      ),
-      body: Padding(
+    return HeaderFooterScaffold(
+      child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
@@ -194,14 +335,8 @@ class _AverageReturnPageState extends State<AverageReturnPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Rentabilidade Média'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.orange,
-        centerTitle: true,
-      ),
-      body: Padding(
+    return HeaderFooterScaffold(
+      child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
@@ -261,14 +396,8 @@ class _StockPricePageState extends State<StockPricePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Preço Atual'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.orange,
-        centerTitle: true,
-      ),
-      body: Padding(
+    return HeaderFooterScaffold(
+      child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
@@ -344,14 +473,8 @@ class _InvestmentPageState extends State<InvestmentPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Investimento'),
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.orange,
-        centerTitle: true,
-      ),
-      body: Padding(
+    return HeaderFooterScaffold(
+      child: Padding(
         padding: const EdgeInsets.all(20.0),
         child: Form(
           key: _formKey,
