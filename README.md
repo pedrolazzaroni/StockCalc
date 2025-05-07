@@ -1,16 +1,33 @@
-# stockcalc
+# 📈 StockCalc
 
-A new Flutter project.
+StockCalc é um aplicativo mobile moderno para simular investimentos em ações de forma simples e visual. Com ele, você pode:
 
-## Getting Started
+- Buscar o preço atual de uma ação na bolsa
+- Informar quanto deseja investir e por quanto tempo
+- Calcular o valor futuro estimado com base na rentabilidade média da ação
+- Visualizar tudo em uma interface elegante, com as cores laranja e preto
 
-This project is a starting point for a Flutter application.
+## Como funciona?
+1. Digite o nome ou código da ação (ex: PETR4.SA)
+2. O app busca o preço atual automaticamente
+3. Informe o valor a investir e o tempo (em anos)
+4. Veja a projeção do seu investimento com base em uma rentabilidade média anual
 
-A few resources to get you started if this is your first Flutter project:
+## Tecnologias
+- Flutter
+- Consumo de API de mercado de ações (ex: Alpha Vantage)
+- Interface responsiva e moderna
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Screenshots
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+> Em breve
+
+## Como rodar
+1. Clone este repositório
+2. Instale as dependências com `flutter pub get`
+3. Adicione sua chave de API no código (`main.dart`)
+4. Execute com `flutter run`
+
+---
+
+Feito com 💸 por [Seu Nome]
