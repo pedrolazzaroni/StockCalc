@@ -44,46 +44,43 @@ class StockCalcApp extends StatelessWidget {
       ),
       home: SplashScreen(),
       onGenerateRoute: (settings) {
+        WidgetBuilder builder;
+        Map<String, dynamic>? args = settings.arguments as Map<String, dynamic>?;
         switch (settings.name) {
           case '/stockName':
-            return PageRouteBuilder(
-              pageBuilder: (_, __, ___) => StockNamePage(),
-              transitionsBuilder: (_, anim, __, child) =>
-                  FadeTransition(opacity: anim, child: child),
-            );
+            builder = (_) => StockNamePage();
+            break;
           case '/averageReturn':
-            final args = settings.arguments as Map<String, dynamic>;
-            return PageRouteBuilder(
-              pageBuilder: (_, __, ___) =>
-                  AverageReturnPage(stockName: args['stockName']),
-              transitionsBuilder: (_, anim, __, child) => SlideTransition(
-                  position:
-                      Tween(begin: Offset(1, 0), end: Offset(0, 0)).animate(anim),
-                  child: child),
-            );
+            builder = (_) => AverageReturnPage(stockName: args!['stockName']);
+            break;
           case '/stockPrice':
-            final args = settings.arguments as Map<String, dynamic>;
-            return PageRouteBuilder(
-              pageBuilder: (_, __, ___) => StockPricePage(
-                  stockName: args['stockName'],
-                  averageReturn: args['averageReturn']),
-              transitionsBuilder: (_, anim, __, child) =>
-                  ScaleTransition(scale: anim, child: child),
-            );
+            builder = (_) => StockPricePage(
+                stockName: args!['stockName'],
+                averageReturn: args['averageReturn']);
+            break;
           case '/investment':
-            final args = settings.arguments as Map<String, dynamic>;
-            return PageRouteBuilder(
-              pageBuilder: (_, __, ___) => InvestmentPage(
-                stockName: args['stockName'],
-                averageReturn: args['averageReturn'],
-                stockPrice: args['stockPrice'],
-              ),
-              transitionsBuilder: (_, anim, __, child) =>
-                  FadeTransition(opacity: anim, child: child),
-            );
+            builder = (_) => InvestmentPage(
+                  stockName: args!['stockName'],
+                  averageReturn: args['averageReturn'],
+                  stockPrice: args['stockPrice'],
+                );
+            break;
           default:
             return null;
         }
+        return PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(1.0, 0.0);
+            const end = Offset.zero;
+            const curve = Curves.ease;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+        );
       },
     );
   }
@@ -458,6 +455,29 @@ class _InvestmentPageState extends State<InvestmentPage> {
                             fontWeight: FontWeight.bold,
                             fontSize: 28,
                           ),
+                        ),
+                        SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pushAndRemoveUntil(
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => StockNamePage(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  const begin = Offset(1.0, 0.0);
+                                  const end = Offset.zero;
+                                  const curve = Curves.ease;
+                                  var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                  return SlideTransition(
+                                    position: animation.drive(tween),
+                                    child: child,
+                                  );
+                                },
+                              ),
+                              (route) => false,
+                            );
+                          },
+                          icon: Icon(Icons.restart_alt),
+                          label: Text('Recomeçar'),
                         ),
                       ],
                     ),
