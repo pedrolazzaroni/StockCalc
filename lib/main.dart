@@ -121,7 +121,15 @@ class SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.show_chart, color: Colors.orange, size: 80),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Image.asset(
+                'images/logo.png',
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
             SizedBox(height: 24),
             Text('StockCalc',
                 style: GoogleFonts.montserrat(
