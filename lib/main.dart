@@ -17,6 +17,7 @@ class StockCalcApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'StockCalc',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: Colors.orange,
         colorScheme: ColorScheme.fromSwatch().copyWith(
@@ -171,13 +172,18 @@ class HeaderFooterScaffold extends StatelessWidget {
                       ),
                       SizedBox(width: 0),
                     ],
-                    Text(
-                      'StockCalc',
-                      style: GoogleFonts.montserrat(
-                        color: Colors.orange,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 26,
-                        letterSpacing: 1.2,
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+                      },
+                      child: Text(
+                        'StockCalc',
+                        style: GoogleFonts.montserrat(
+                          color: Colors.orange,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 26,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                     ),
                   ],
@@ -238,22 +244,31 @@ class HomePage extends StatelessWidget {
               ),
             ),
             SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pushNamed('/stockName');
-              },
-              child: Text('Iniciar'),
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/stockName');
+                },
+                child: Text('Iniciar', style: GoogleFonts.montserrat(fontSize: 22)),
+              ),
             ),
             SizedBox(height: 24),
-            OutlinedButton(
-              onPressed: () {
-                Navigator.of(context).pushNamed('/about');
-              },
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: Colors.orange),
-                foregroundColor: Colors.orange,
+            SizedBox(
+              width: double.infinity,
+              height: 60,
+              child: OutlinedButton(
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/about');
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.orange),
+                  foregroundColor: Colors.orange,
+                  textStyle: GoogleFonts.montserrat(fontSize: 22),
+                ),
+                child: Text('Sobre', style: GoogleFonts.montserrat(fontSize: 22)),
               ),
-              child: Text('Sobre'),
             ),
           ],
         ),
@@ -329,6 +344,12 @@ class StockNamePageState extends State<StockNamePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                'Informe o nome da ação que deseja simular. Exemplo: PETR4, VALE3, etc.',
+                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
               TextFormField(
                 controller: _stockNameController,
                 decoration: InputDecoration(
@@ -344,16 +365,20 @@ class StockNamePageState extends State<StockNamePage> {
                 },
               ),
               SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.of(context).pushNamed('/averageReturn',
-                        arguments: {
-                          'stockName': _stockNameController.text.trim(),
-                        });
-                  }
-                },
-                child: Text('Próximo'),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.of(context).pushNamed('/averageReturn',
+                          arguments: {
+                            'stockName': _stockNameController.text.trim(),
+                          });
+                    }
+                  },
+                  child: Text('Próximo', style: GoogleFonts.montserrat(fontSize: 22)),
+                ),
               ),
             ],
           ),
@@ -385,6 +410,12 @@ class AverageReturnPageState extends State<AverageReturnPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                'Digite a rentabilidade média anual (%) que você espera para essa ação.',
+                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
               Text('Ação: ${widget.stockName}',
                   style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
               SizedBox(height: 16),
@@ -405,17 +436,21 @@ class AverageReturnPageState extends State<AverageReturnPage> {
                 },
               ),
               SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.of(context).pushNamed('/stockPrice', arguments: {
-                      'stockName': widget.stockName,
-                      'averageReturn':
-                          double.parse(_averageReturnController.text) / 100,
-                    });
-                  }
-                },
-                child: Text('Próximo'),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.of(context).pushNamed('/stockPrice', arguments: {
+                        'stockName': widget.stockName,
+                        'averageReturn':
+                            double.parse(_averageReturnController.text) / 100,
+                      });
+                    }
+                  },
+                  child: Text('Próximo', style: GoogleFonts.montserrat(fontSize: 22)),
+                ),
               ),
             ],
           ),
@@ -447,6 +482,12 @@ class StockPricePageState extends State<StockPricePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              Text(
+                'Informe o preço atual da ação para o cálculo da simulação.',
+                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
               Text('Ação: ${widget.stockName}',
                   style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
               SizedBox(height: 16),
@@ -467,17 +508,21 @@ class StockPricePageState extends State<StockPricePage> {
                 },
               ),
               SizedBox(height: 24),
-              ElevatedButton(
-                onPressed: () {
-                  if (_formKey.currentState!.validate()) {
-                    Navigator.of(context).pushNamed('/investment', arguments: {
-                      'stockName': widget.stockName,
-                      'averageReturn': widget.averageReturn,
-                      'stockPrice': double.parse(_stockPriceController.text),
-                    });
-                  }
-                },
-                child: Text('Próximo'),
+              SizedBox(
+                width: double.infinity,
+                height: 60,
+                child: ElevatedButton(
+                  onPressed: () {
+                    if (_formKey.currentState!.validate()) {
+                      Navigator.of(context).pushNamed('/investment', arguments: {
+                        'stockName': widget.stockName,
+                        'averageReturn': widget.averageReturn,
+                        'stockPrice': double.parse(_stockPriceController.text),
+                      });
+                    }
+                  },
+                  child: Text('Próximo', style: GoogleFonts.montserrat(fontSize: 22)),
+                ),
               ),
             ],
           ),
@@ -602,6 +647,12 @@ class InvestmentPageState extends State<InvestmentPage> {
           key: _formKey,
           child: ListView(
             children: [
+              Text(
+                'Preencha os dados abaixo para simular o valor futuro do seu investimento nesta ação.',
+                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 24),
               Card(
                 color: Colors.orange,
                 shape: RoundedRectangleBorder(
