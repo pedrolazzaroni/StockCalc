@@ -1,1 +1,1 @@
-const openAIApiKey = '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';
+const openAIApiKey = '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';
