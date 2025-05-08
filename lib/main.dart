@@ -124,7 +124,7 @@ class SplashScreenState extends State<SplashScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(32),
               child: Image.asset(
-                'images/logo.png',
+                'lib/images/logo.png',
                 width: 80,
                 height: 80,
                 fit: BoxFit.cover,
@@ -240,6 +240,16 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(32),
+              child: Image.asset(
+                'lib/images/logo.png',
+                width: 80,
+                height: 80,
+                fit: BoxFit.cover,
+              ),
+            ),
+            SizedBox(height: 32),
             ElevatedButton(
               onPressed: () {
                 Navigator.of(context).pushNamed('/stockName');
