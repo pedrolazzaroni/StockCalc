@@ -355,29 +355,73 @@ class StockNamePageState extends State<StockNamePage> {
       _error = null;
     });
     try {
-      final apiKey = 'rVSYBC4GSXkSdtFSputxo5';
-      final url = 'https://brapi.dev/api/quote/$query?token=$apiKey';
-      final res = await http.get(Uri.parse(url));
+      final apiKey = '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';
+      final url = 'https://api.openai.com/v1/chat/completions';
+      final headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + apiKey,
+      };
+      final body = json.encode({
+        'model': 'gpt-4.1-nano',
+        'messages': [
+          {
+            'role': 'system',
+            'content': 'Você é um assistente financeiro que responde apenas em JSON. Dado o código de uma ação brasileira, responda apenas um JSON com os campos: symbol, name, price, annualReturn, monthlyReturn. O campo price é o preço atual, annualReturn é a rentabilidade dos últimos 12 meses (em decimal, ex: 0.12 para 12%), monthlyReturn é a rentabilidade dos últimos 30 dias (em decimal). Se não encontrar, retorne um array vazio.'
+          },
+          {
+            'role': 'user',
+            'content': query
+          }
+        ],
+        'max_tokens': 300
+      });
+      final res = await http.post(Uri.parse(url), headers: headers, body: body);
+      // DEBUG: imprime status e corpo da resposta
+      print('🔔 [ChatGPT API] statusCode: ${res.statusCode}');
+      print('🔔 [ChatGPT API] body: ${res.body}');
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
-        final List results = data['results'] ?? [];
+        String? content;
+        try {
+          content = data['choices'][0]['message']['content'];
+        } catch (_) {
+          content = null;
+        }
+        if (content == null) {
+          setState(() {
+            _error = 'Resposta inesperada da API.';
+            _loading = false;
+          });
+          return;
+        }
+        dynamic jsonResult;
+        try {
+          jsonResult = json.decode(content);
+        } catch (_) {
+          setState(() {
+            _error = 'Erro ao decodificar resposta.';
+            _loading = false;
+          });
+          return;
+        }
         List<StockSuggestion> suggestions = [];
-        for (var t in results) {
-          final symbol = t['symbol'] ?? '';
-          final name = t['longName'] ?? t['shortName'] ?? '';
-          final price = (t['regularMarketPrice'] ?? 0).toDouble();
-          // Rentabilidade anual e mensal
-          double annualReturn = 0;
-          double monthlyReturn = 0;
-          if (t['historicalDataPrice'] != null && t['historicalDataPrice'] is List && t['historicalDataPrice'].length > 250) {
-            final List hist = t['historicalDataPrice'];
-            final first = (hist.first['close'] ?? 0).toDouble();
-            final last = (hist.last['close'] ?? 0).toDouble();
-            if (first > 0) {
-              annualReturn = (last - first) / first;
-              monthlyReturn = pow(1 + annualReturn, 1/12) - 1;
+        if (jsonResult is List) {
+          for (var t in jsonResult) {
+            final symbol = t['symbol'] ?? '';
+            final name = t['name'] ?? '';
+            final price = (t['price'] ?? 0).toDouble();
+            final annualReturn = (t['annualReturn'] ?? 0).toDouble();
+            final monthlyReturn = (t['monthlyReturn'] ?? 0).toDouble();
+            if (symbol.isNotEmpty && price > 0) {
+              suggestions.add(StockSuggestion(symbol: symbol, name: name, price: price, annualReturn: annualReturn, monthlyReturn: monthlyReturn));
             }
           }
+        } else if (jsonResult is Map) {
+          final symbol = jsonResult['symbol'] ?? '';
+          final name = jsonResult['name'] ?? '';
+          final price = (jsonResult['price'] ?? 0).toDouble();
+          final annualReturn = (jsonResult['annualReturn'] ?? 0).toDouble();
+          final monthlyReturn = (jsonResult['monthlyReturn'] ?? 0).toDouble();
           if (symbol.isNotEmpty && price > 0) {
             suggestions.add(StockSuggestion(symbol: symbol, name: name, price: price, annualReturn: annualReturn, monthlyReturn: monthlyReturn));
           }
@@ -388,13 +432,15 @@ class StockNamePageState extends State<StockNamePage> {
         });
       } else {
         setState(() {
-          _error = 'Erro ao buscar ações.';
+          _error = 'Erro ao buscar ações (status ${res.statusCode})';
           _loading = false;
         });
+        return;
       }
-    } catch (e) {
+    } catch (e, st) {
+      print('🔴 [ChatGPT API] Exception: ${e}\n${st}');
       setState(() {
-        _error = 'Erro de conexão.';
+        _error = 'Erro de conexão ou parsing.';
         _loading = false;
       });
     }
