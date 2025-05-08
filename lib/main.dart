@@ -155,19 +155,7 @@ class HeaderFooterScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.black,
-              Colors.orange.shade900,
-              Colors.orange.shade700,
-              Colors.black,
-            ],
-            stops: [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
+        color: const Color(0xFF23272A),
         child: SafeArea(
           child: Column(
             children: [
