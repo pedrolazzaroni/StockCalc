@@ -5,6 +5,8 @@ import 'dart:math';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 void main() {
   runApp(StockCalcApp());
@@ -62,18 +64,12 @@ class StockCalcApp extends StatelessWidget {
           case '/stockName':
             builder = (_) => const StockNamePage();
             break;
-          case '/averageReturn':
-            builder = (_) => AverageReturnPage(stockName: args!['stockName']);
-            break;
-          case '/stockPrice':
-            builder = (_) => StockPricePage(
-                stockName: args!['stockName'],
-                averageReturn: args['averageReturn']);
-            break;
           case '/investment':
             builder = (_) => InvestmentPage(
                   stockName: args!['stockName'],
+                  stockFullName: args['stockFullName'],
                   averageReturn: args['averageReturn'],
+                  monthlyReturn: args['monthlyReturn'],
                   stockPrice: args['stockPrice'],
                 );
             break;
@@ -330,75 +326,79 @@ class StockNamePage extends StatefulWidget {
   StockNamePageState createState() => StockNamePageState();
 }
 
+class StockSuggestion {
+  final String symbol;
+  final String name;
+  final double price;
+  final double annualReturn;
+  final double monthlyReturn;
+  StockSuggestion({required this.symbol, required this.name, required this.price, required this.annualReturn, required this.monthlyReturn});
+}
+
 class StockNamePageState extends State<StockNamePage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _stockNameController = TextEditingController();
+  List<StockSuggestion> _suggestions = [];
+  bool _loading = false;
+  String? _error;
 
-  @override
-  Widget build(BuildContext context) {
-    return HeaderFooterScaffold(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Informe o nome da ação que deseja simular. Exemplo: PETR4, VALE3, etc.',
-                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24),
-              TextFormField(
-                controller: _stockNameController,
-                decoration: InputDecoration(
-                  labelText: 'Nome da ação (ex: PETR4)',
-                  prefixIcon: Icon(Icons.business, color: Colors.orange),
-                ),
-                style: GoogleFonts.roboto(color: Colors.white),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Informe o nome da ação';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.of(context).pushNamed('/averageReturn',
-                          arguments: {
-                            'stockName': _stockNameController.text.trim(),
-                          });
-                    }
-                  },
-                  child: Text('Próximo', style: GoogleFonts.montserrat(fontSize: 22)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  Future<void> _fetchSuggestions(String query) async {
+    if (query.isEmpty) {
+      setState(() {
+        _suggestions = [];
+        _error = null;
+      });
+      return;
+    }
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final apiKey = 'rVSYBC4GSXkSdtFSputxo5';
+      final url = 'https://brapi.dev/api/quote/$query?token=$apiKey';
+      final res = await http.get(Uri.parse(url));
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        final List results = data['results'] ?? [];
+        List<StockSuggestion> suggestions = [];
+        for (var t in results) {
+          final symbol = t['symbol'] ?? '';
+          final name = t['longName'] ?? t['shortName'] ?? '';
+          final price = (t['regularMarketPrice'] ?? 0).toDouble();
+          // Rentabilidade anual e mensal
+          double annualReturn = 0;
+          double monthlyReturn = 0;
+          if (t['historicalDataPrice'] != null && t['historicalDataPrice'] is List && t['historicalDataPrice'].length > 250) {
+            final List hist = t['historicalDataPrice'];
+            final first = (hist.first['close'] ?? 0).toDouble();
+            final last = (hist.last['close'] ?? 0).toDouble();
+            if (first > 0) {
+              annualReturn = (last - first) / first;
+              monthlyReturn = pow(1 + annualReturn, 1/12) - 1;
+            }
+          }
+          if (symbol.isNotEmpty && price > 0) {
+            suggestions.add(StockSuggestion(symbol: symbol, name: name, price: price, annualReturn: annualReturn, monthlyReturn: monthlyReturn));
+          }
+        }
+        setState(() {
+          _suggestions = suggestions;
+          _loading = false;
+        });
+      } else {
+        setState(() {
+          _error = 'Erro ao buscar ações.';
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Erro de conexão.';
+        _loading = false;
+      });
+    }
   }
-}
-
-class AverageReturnPage extends StatefulWidget {
-  final String stockName;
-  const AverageReturnPage({required this.stockName, Key? key}) : super(key: key);
-  @override
-  AverageReturnPageState createState() => AverageReturnPageState();
-}
-
-class AverageReturnPageState extends State<AverageReturnPage> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _averageReturnController =
-      TextEditingController();
 
   @override
   Widget build(BuildContext context) {
@@ -411,119 +411,60 @@ class AverageReturnPageState extends State<AverageReturnPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Digite a rentabilidade média anual (%) que você espera para essa ação.',
+                'Digite o código da ação (ex: PETR4, VALE3) e clique em Pesquisar.',
                 style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 24),
-              Text('Ação: ${widget.stockName}',
-                  style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _averageReturnController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Rentabilidade média anual (%)',
-                  prefixIcon: Icon(Icons.percent, color: Colors.orange),
-                ),
-                style: GoogleFonts.roboto(color: Colors.white),
-                validator: (value) {
-                  final v = double.tryParse(value ?? '');
-                  if (v == null || v <= 0) {
-                    return 'Informe uma rentabilidade válida';
-                  }
-                  return null;
-                },
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _stockNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Código da ação',
+                        prefixIcon: Icon(Icons.business, color: Colors.orange),
+                      ),
+                      style: GoogleFonts.roboto(color: Colors.white),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      FocusScope.of(context).unfocus();
+                      _fetchSuggestions(_stockNameController.text.trim());
+                    },
+                    child: Text('Pesquisar'),
+                  ),
+                ],
               ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      Navigator.of(context).pushNamed('/stockPrice', arguments: {
-                        'stockName': widget.stockName,
-                        'averageReturn':
-                            double.parse(_averageReturnController.text) / 100,
-                      });
-                    }
-                  },
-                  child: Text('Próximo', style: GoogleFonts.montserrat(fontSize: 22)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class StockPricePage extends StatefulWidget {
-  final String stockName;
-  final double averageReturn;
-  const StockPricePage({required this.stockName, required this.averageReturn, Key? key}) : super(key: key);
-  @override
-  StockPricePageState createState() => StockPricePageState();
-}
-
-class StockPricePageState extends State<StockPricePage> {
-  final _formKey = GlobalKey<FormState>();
-  final TextEditingController _stockPriceController = TextEditingController();
-
-  @override
-  Widget build(BuildContext context) {
-    return HeaderFooterScaffold(
-      child: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'Informe o preço atual da ação para o cálculo da simulação.',
-                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24),
-              Text('Ação: ${widget.stockName}',
-                  style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
-              SizedBox(height: 16),
-              TextFormField(
-                controller: _stockPriceController,
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Preço atual da ação (R\$)',
-                  prefixIcon: Icon(Icons.attach_money, color: Colors.orange),
-                ),
-                style: GoogleFonts.roboto(color: Colors.white),
-                validator: (value) {
-                  final v = double.tryParse(value ?? '');
-                  if (v == null || v <= 0) {
-                    return 'Informe um preço válido';
-                  }
-                  return null;
-                },
-              ),
-              SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 60,
-                child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
+              if (_loading) ...[
+                SizedBox(height: 16),
+                CircularProgressIndicator(color: Colors.orange),
+              ],
+              if (_error != null) ...[
+                SizedBox(height: 16),
+                Text(_error!, style: TextStyle(color: Colors.red)),
+              ],
+              if (_suggestions.isNotEmpty) ...[
+                SizedBox(height: 16),
+                ..._suggestions.map((s) => Card(
+                  color: Colors.white10,
+                  child: ListTile(
+                    title: Text('${s.symbol} - ${s.name}', style: GoogleFonts.roboto(color: Colors.orange)),
+                    subtitle: Text('Preço: R\$ ${s.price.toStringAsFixed(2)} | Rent. anual: ${(s.annualReturn*100).toStringAsFixed(2)}% | Rent. mensal: ${(s.monthlyReturn*100).toStringAsFixed(2)}%', style: GoogleFonts.roboto(color: Colors.white70)),
+                    onTap: () {
                       Navigator.of(context).pushNamed('/investment', arguments: {
-                        'stockName': widget.stockName,
-                        'averageReturn': widget.averageReturn,
-                        'stockPrice': double.parse(_stockPriceController.text),
+                        'stockName': s.symbol,
+                        'stockFullName': s.name,
+                        'stockPrice': s.price,
+                        'averageReturn': s.annualReturn,
+                        'monthlyReturn': s.monthlyReturn,
                       });
-                    }
-                  },
-                  child: Text('Próximo', style: GoogleFonts.montserrat(fontSize: 22)),
-                ),
-              ),
+                    },
+                  ),
+                )),
+              ],
             ],
           ),
         ),
@@ -534,9 +475,11 @@ class StockPricePageState extends State<StockPricePage> {
 
 class InvestmentPage extends StatefulWidget {
   final String stockName;
+  final String stockFullName;
   final double averageReturn;
+  final double monthlyReturn;
   final double stockPrice;
-  const InvestmentPage({required this.stockName, required this.averageReturn, required this.stockPrice, Key? key}) : super(key: key);
+  const InvestmentPage({required this.stockName, required this.stockFullName, required this.averageReturn, required this.monthlyReturn, required this.stockPrice, Key? key}) : super(key: key);
   @override
   InvestmentPageState createState() => InvestmentPageState();
 }
@@ -596,7 +539,7 @@ class InvestmentPageState extends State<InvestmentPage> {
       final List<double> chart = [];
       double value = invested;
       int periods = _period == 'anual' ? years : years * 12;
-      double rate = _period == 'anual' ? widget.averageReturn : pow(1 + widget.averageReturn, 1/12) - 1;
+      double rate = _period == 'anual' ? widget.averageReturn : widget.monthlyReturn;
       for (int i = 0; i <= periods; i++) {
         chart.add(value);
         value = value * (1 + rate) + recurring;
@@ -615,7 +558,9 @@ class InvestmentPageState extends State<InvestmentPage> {
       setState(() {
         _comparisons.add({
           'stockName': widget.stockName,
+          'stockFullName': widget.stockFullName,
           'averageReturn': widget.averageReturn,
+          'monthlyReturn': widget.monthlyReturn,
           'stockPrice': widget.stockPrice,
           'invested': _amountController.text,
           'recurring': _recurringController.text,
@@ -643,148 +588,20 @@ class InvestmentPageState extends State<InvestmentPage> {
     return HeaderFooterScaffold(
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              Text(
-                'Preencha os dados abaixo para simular o valor futuro do seu investimento nesta ação.',
-                style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 24),
-              Card(
-                color: Colors.orange,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'Preencha os dados abaixo para simular o valor futuro do seu investimento nesta ação.',
+                  style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+                  textAlign: TextAlign.center,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      Text(
-                        widget.stockName,
-                        style: GoogleFonts.montserrat(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Preço atual: R\$ ${NumberFormat.simpleCurrency(name: 'BRL').format(widget.stockPrice)}',
-                        style: GoogleFonts.roboto(
-                          color: Colors.black,
-                          fontSize: 18,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Rentabilidade média anual: ${(widget.averageReturn * 100).toStringAsFixed(2)}%',
-                        style: GoogleFonts.roboto(
-                          color: Colors.black,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: 24),
-              Tooltip(
-                message: 'Valor inicial a ser investido, sem aportes mensais.',
-                child: TextFormField(
-                  controller: _amountController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Quanto deseja investir (R\$)',
-                    prefixIcon: Icon(Icons.attach_money, color: Colors.orange),
-                  ),
-                  style: GoogleFonts.roboto(color: Colors.white),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Informe o valor a investir';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 16),
-              Tooltip(
-                message: 'Aporte extra a cada período.',
-                child: TextFormField(
-                  controller: _recurringController,
-                  keyboardType: TextInputType.numberWithOptions(decimal: true),
-                  decoration: InputDecoration(
-                    labelText: 'Aporte recorrente (R\$)',
-                    prefixIcon: Icon(Icons.repeat, color: Colors.orange),
-                  ),
-                  style: GoogleFonts.roboto(color: Colors.white),
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Text('Período:', style: GoogleFonts.roboto(color: Colors.orange)),
-                  SizedBox(width: 12),
-                  DropdownButton<String>(
-                    value: _periodOptions.contains(_period) ? _period : _periodOptions.first,
-                    dropdownColor: Colors.black,
-                    style: GoogleFonts.roboto(color: Colors.orange),
-                    items: _periodOptions.map((p) => DropdownMenuItem(value: p, child: Text(p == 'anual' ? 'Anual' : 'Mensal'))).toList(),
-                    onChanged: (v) => setState(() => _period = v!),
-                  ),
-                ],
-              ),
-              SizedBox(height: 16),
-              Tooltip(
-                message: 'Tempo total do investimento em anos.',
-                child: TextFormField(
-                  controller: _yearsController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'Por quantos anos?',
-                    prefixIcon: Icon(Icons.calendar_today, color: Colors.orange),
-                  ),
-                  style: GoogleFonts.roboto(color: Colors.white),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Informe o tempo de investimento';
-                    }
-                    return null;
-                  },
-                ),
-              ),
-              SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: () {
-                        if (_formKey.currentState!.validate()) {
-                          calculateFutureValue();
-                        }
-                      },
-                      child: Text('Calcular'),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _addComparison,
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: Colors.orange),
-                        foregroundColor: Colors.orange,
-                      ),
-                      child: Text('Adicionar ação'),
-                    ),
-                  ),
-                ],
-              ),
-              if (_futureValue != null) ...[
                 SizedBox(height: 24),
                 Card(
-                  color: Colors.black,
+                  color: Colors.orange,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -793,125 +610,264 @@ class InvestmentPageState extends State<InvestmentPage> {
                     child: Column(
                       children: [
                         Text(
-                          'Valor futuro estimado:',
+                          widget.stockFullName,
                           style: GoogleFonts.montserrat(
-                            color: Colors.orange,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Preço atual: R\$ ${NumberFormat.simpleCurrency(name: 'BRL').format(widget.stockPrice)}',
+                          style: GoogleFonts.roboto(
+                            color: Colors.black,
                             fontSize: 18,
                           ),
                         ),
                         SizedBox(height: 8),
                         Text(
-                          'R\$ ${NumberFormat.simpleCurrency(name: 'BRL').format(_futureValue)}',
-                          style: GoogleFonts.montserrat(
-                            color: Colors.orange,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 28,
+                          'Rentabilidade média anual: ${(widget.averageReturn * 100).toStringAsFixed(2)}%',
+                          style: GoogleFonts.roboto(
+                            color: Colors.black,
+                            fontSize: 16,
                           ),
                         ),
-                        SizedBox(height: 16),
-                        SizedBox(
-                          height: 180,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              return Flexible(
-                                child: LineChart(
-                                  LineChartData(
-                                    gridData: FlGridData(show: false),
-                                    titlesData: FlTitlesData(
-                                      leftTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: false),
-                                      ),
-                                      bottomTitles: AxisTitles(
-                                        sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) {
-                                          return Text('${value.toInt()}a', style: TextStyle(color: Colors.orange, fontSize: 10));
-                                        }),
-                                      ),
-                                      topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                    ),
-                                    borderData: FlBorderData(show: false),
-                                    lineBarsData: [
-                                      LineChartBarData(
-                                        spots: [
-                                          for (int i = 0; i < _chartData.length; i++)
-                                            FlSpot(i.toDouble(), _chartData[i]),
-                                        ],
-                                        isCurved: true,
-                                        color: Colors.orange,
-                                        barWidth: 3,
-                                        dotData: FlDotData(show: false),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              );
-                            },
+                        SizedBox(height: 8),
+                        Text(
+                          'Rentabilidade média mensal: ${(widget.monthlyReturn * 100).toStringAsFixed(2)}%',
+                          style: GoogleFonts.roboto(
+                            color: Colors.black,
+                            fontSize: 16,
                           ),
-                        ),
-                        SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _shareResult,
-                              icon: Icon(Icons.share),
-                              label: Text('Compartilhar'),
-                            ),
-                            ElevatedButton.icon(
-                              onPressed: () {
-                                Navigator.of(context).pushAndRemoveUntil(
-                                  PageRouteBuilder(
-                                    pageBuilder: (context, animation, secondaryAnimation) => const StockNamePage(),
-                                    transitionsBuilder: (context, animation, secondaryAnimation, child) {
-                                      const begin = Offset(1.0, 0.0);
-                                      const end = Offset.zero;
-                                      const curve = Curves.ease;
-                                      var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
-                                      return SlideTransition(
-                                        position: animation.drive(tween),
-                                        child: child,
-                                      );
-                                    },
-                                  ),
-                                  (route) => false,
-                                );
-                              },
-                              icon: Icon(Icons.restart_alt),
-                              label: Text('Recomeçar'),
-                            ),
-                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
-              ],
-              SizedBox(height: 32),
-              if (_comparisons.isNotEmpty) ...[
-                Text('Comparação de Ações', style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
-                SizedBox(height: 8),
-                ..._comparisons.map((c) => Card(
-                  color: Colors.white10,
-                  child: ListTile(
-                    title: Text('${c['stockName']}', style: GoogleFonts.roboto(color: Colors.orange)),
-                    subtitle: Text('Investido: R\$ ${c['invested']} | Aporte: R\$ ${c['recurring']} | ${c['years']} anos (${c['period']})', style: GoogleFonts.roboto(color: Colors.white70)),
+                SizedBox(height: 24),
+                Tooltip(
+                  message: 'Valor inicial a ser investido, sem aportes mensais.',
+                  child: TextFormField(
+                    controller: _amountController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Quanto deseja investir (R\$)',
+                      prefixIcon: Icon(Icons.attach_money, color: Colors.orange),
+                    ),
+                    style: GoogleFonts.roboto(color: Colors.white),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Informe o valor a investir';
+                      }
+                      return null;
+                    },
                   ),
-                )),
-              ],
-              SizedBox(height: 32),
-              if (_history.isNotEmpty) ...[
-                Text('Histórico de Simulações', style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
-                SizedBox(height: 8),
-                ..._history.map((h) => Card(
-                  color: Colors.white10,
-                  child: ListTile(
-                    title: Text('${h['stock']}', style: GoogleFonts.roboto(color: Colors.orange)),
-                    subtitle: Text('Investido: R\$ ${h['invested']} | Futuro: R\$ ${double.parse(h['future']).toStringAsFixed(2)} | ${h['years']} anos', style: GoogleFonts.roboto(color: Colors.white70)),
-                    trailing: Text(DateFormat('dd/MM/yy').format(DateTime.parse(h['date'])), style: GoogleFonts.roboto(color: Colors.white38)),
+                ),
+                SizedBox(height: 16),
+                Tooltip(
+                  message: 'Aporte extra a cada período.',
+                  child: TextFormField(
+                    controller: _recurringController,
+                    keyboardType: TextInputType.numberWithOptions(decimal: true),
+                    decoration: InputDecoration(
+                      labelText: 'Aporte recorrente (R\$)',
+                      prefixIcon: Icon(Icons.repeat, color: Colors.orange),
+                    ),
+                    style: GoogleFonts.roboto(color: Colors.white),
                   ),
-                )),
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Text('Período:', style: GoogleFonts.roboto(color: Colors.orange)),
+                    SizedBox(width: 12),
+                    DropdownButton<String>(
+                      value: _periodOptions.contains(_period) ? _period : _periodOptions.first,
+                      dropdownColor: Colors.black,
+                      style: GoogleFonts.roboto(color: Colors.orange),
+                      items: _periodOptions.map((p) => DropdownMenuItem(value: p, child: Text(p == 'anual' ? 'Anual' : 'Mensal'))).toList(),
+                      onChanged: (v) => setState(() => _period = v!),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 16),
+                Tooltip(
+                  message: 'Tempo total do investimento em anos.',
+                  child: TextFormField(
+                    controller: _yearsController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Por quantos anos?',
+                      prefixIcon: Icon(Icons.calendar_today, color: Colors.orange),
+                    ),
+                    style: GoogleFonts.roboto(color: Colors.white),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Informe o tempo de investimento';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          if (_formKey.currentState!.validate()) {
+                            calculateFutureValue();
+                          }
+                        },
+                        child: Text('Calcular'),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _addComparison,
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.orange),
+                          foregroundColor: Colors.orange,
+                        ),
+                        child: Text('Adicionar ação'),
+                      ),
+                    ),
+                  ],
+                ),
+                if (_futureValue != null) ...[
+                  SizedBox(height: 24),
+                  Card(
+                    color: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        children: [
+                          Text(
+                            'Valor futuro estimado:',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.orange,
+                              fontSize: 18,
+                            ),
+                          ),
+                          SizedBox(height: 8),
+                          Text(
+                            'R\$ ${NumberFormat.simpleCurrency(name: 'BRL').format(_futureValue)}',
+                            style: GoogleFonts.montserrat(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 28,
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          SizedBox(
+                            height: 180,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                return Flexible(
+                                  child: LineChart(
+                                    LineChartData(
+                                      gridData: FlGridData(show: false),
+                                      titlesData: FlTitlesData(
+                                        leftTitles: AxisTitles(
+                                          sideTitles: SideTitles(showTitles: false),
+                                        ),
+                                        bottomTitles: AxisTitles(
+                                          sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) {
+                                            return Text('${value.toInt()}a', style: TextStyle(color: Colors.orange, fontSize: 10));
+                                          }),
+                                        ),
+                                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                      ),
+                                      borderData: FlBorderData(show: false),
+                                      lineBarsData: [
+                                        LineChartBarData(
+                                          spots: [
+                                            for (int i = 0; i < _chartData.length; i++)
+                                              FlSpot(i.toDouble(), _chartData[i]),
+                                          ],
+                                          isCurved: true,
+                                          color: Colors.orange,
+                                          barWidth: 3,
+                                          dotData: FlDotData(show: false),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                          SizedBox(height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              ElevatedButton.icon(
+                                onPressed: _shareResult,
+                                icon: Icon(Icons.share),
+                                label: Text('Compartilhar'),
+                              ),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pushAndRemoveUntil(
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation, secondaryAnimation) => const StockNamePage(),
+                                      transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                        const begin = Offset(1.0, 0.0);
+                                        const end = Offset.zero;
+                                        const curve = Curves.ease;
+                                        var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                                        return SlideTransition(
+                                          position: animation.drive(tween),
+                                          child: child,
+                                        );
+                                      },
+                                    ),
+                                    (route) => false,
+                                  );
+                                },
+                                icon: Icon(Icons.restart_alt),
+                                label: Text('Recomeçar'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                SizedBox(height: 32),
+                if (_comparisons.isNotEmpty) ...[
+                  Text('Comparação de Ações', style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
+                  SizedBox(height: 8),
+                  ..._comparisons.map((c) => Card(
+                    color: Colors.white10,
+                    child: ListTile(
+                      title: Text('${c['stockName']} - ${c['stockFullName']}', style: GoogleFonts.roboto(color: Colors.orange)),
+                      subtitle: Text('Investido: R\$ ${c['invested']} | Aporte: R\$ ${c['recurring']} | ${c['years']} anos (${c['period']})', style: GoogleFonts.roboto(color: Colors.white70)),
+                    ),
+                  )),
+                ],
+                SizedBox(height: 32),
+                if (_history.isNotEmpty) ...[
+                  Text('Histórico de Simulações', style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18)),
+                  SizedBox(height: 8),
+                  ..._history.map((h) => Card(
+                    color: Colors.white10,
+                    child: ListTile(
+                      title: Text('${h['stock']}', style: GoogleFonts.roboto(color: Colors.orange)),
+                      subtitle: Text('Investido: R\$ ${h['invested']} | Futuro: R\$ ${double.parse(h['future']).toStringAsFixed(2)} | ${h['years']} anos', style: GoogleFonts.roboto(color: Colors.white70)),
+                      trailing: Text(DateFormat('dd/MM/yy').format(DateTime.parse(h['date'])), style: GoogleFonts.roboto(color: Colors.white38)),
+                    ),
+                  )),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),
