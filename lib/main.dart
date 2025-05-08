@@ -7,6 +7,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'api_keys.dart';
 
 void main() {
   runApp(StockCalcApp());
@@ -355,7 +356,7 @@ class StockNamePageState extends State<StockNamePage> {
       _error = null;
     });
     try {
-      final apiKey = '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';
+      final apiKey = openAIApiKey;
       final url = 'https://api.openai.com/v1/chat/completions';
       final headers = {
         'Content-Type': 'application/json',
