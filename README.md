@@ -11,7 +11,7 @@ StockCalc é um aplicativo mobile moderno para simular investimentos em ações 
 - **Histórico de simulações**: Acesse o histórico dos últimos 10 cálculos realizados, com detalhes de cada simulação (ação, investido, valor futuro, tempo e data).
 - **Compartilhamento**: Compartilhe o resultado da sua simulação com amigos de forma rápida.
 - **Interface responsiva**: Layout adaptado para diferentes tamanhos de tela, com navegação fluida entre as páginas.
-- **Página Sobre**: Informações sobre o app e os criadores.
+- **Página Sobre**: Informações sobre o app o criador.
 - **Página inicial com navegação**: Acesse rapidamente as funções principais: Iniciar simulação, Sobre e Histórico (aparece apenas se houver simulações salvas).
 - **Avisos de precisão**: O app informa que os dados são fornecidos pela API Gemini 2.0 Flash e podem não ser precisos, pois o modelo foi treinado até dezembro de 2023.
 
