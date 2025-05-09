@@ -74,6 +74,9 @@ class StockCalcApp extends StatelessWidget {
                   stockPrice: args['stockPrice'],
                 );
             break;
+          case '/history':
+            builder = (_) => const HistoryPage();
+            break;
           default:
             builder = (_) => const HomePage(); // Fallback seguro
         }
@@ -224,6 +227,12 @@ class HeaderFooterScaffold extends StatelessWidget {
 class HomePage extends StatelessWidget {
   const HomePage({Key? key}) : super(key: key);
 
+  Future<bool> _hasHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList('history') ?? [];
+    return history.isNotEmpty;
+  }
+
   @override
   Widget build(BuildContext context) {
     return HeaderFooterScaffold(
@@ -272,6 +281,33 @@ class HomePage extends StatelessWidget {
                 ),
                 child: Text('Sobre', style: GoogleFonts.montserrat(fontSize: 22)),
               ),
+            ),
+            SizedBox(height: 24),
+            FutureBuilder<bool>(
+              future: _hasHistory(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return SizedBox.shrink();
+                }
+                if (snapshot.data == true) {
+                  return SizedBox(
+                    width: double.infinity,
+                    height: 60,
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.of(context).pushNamed('/history');
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.orange),
+                        foregroundColor: Colors.orange,
+                        textStyle: GoogleFonts.montserrat(fontSize: 22),
+                      ),
+                      child: Text('Histórico', style: GoogleFonts.montserrat(fontSize: 22)),
+                    ),
+                  );
+                }
+                return SizedBox.shrink();
+              },
             ),
           ],
         ),
@@ -922,6 +958,67 @@ class InvestmentPageState extends State<InvestmentPage> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class HistoryPage extends StatefulWidget {
+  const HistoryPage({Key? key}) : super(key: key);
+  @override
+  _HistoryPageState createState() => _HistoryPageState();
+}
+
+class _HistoryPageState extends State<HistoryPage> {
+  List<Map<String, dynamic>> _history = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  Future<void> _loadHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    final history = prefs.getStringList('history') ?? [];
+    setState(() {
+      _history = history.map((e) {
+        try {
+          return Map<String, dynamic>.from(Uri.splitQueryString(e) as Map);
+        } catch (_) {
+          return <String, dynamic>{};
+        }
+      }).where((h) => h.isNotEmpty).toList();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return HeaderFooterScaffold(
+      showBack: true,
+      child: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Histórico de Simulações', style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 22, fontWeight: FontWeight.bold)),
+            SizedBox(height: 16),
+            Expanded(
+              child: _history.isEmpty
+                  ? Center(child: Text('Nenhum histórico encontrado.', style: GoogleFonts.roboto(color: Colors.white70)))
+                  : ListView(
+                      children: _history.map((h) => Card(
+                        color: Colors.white10,
+                        child: ListTile(
+                          title: Text('${h['stock']}', style: GoogleFonts.roboto(color: Colors.orange)),
+                          subtitle: Text('Investido: R\$ ${h['invested']} | Futuro: R\$ ${double.parse(h['future']).toStringAsFixed(2)} | ${h['years']} anos', style: GoogleFonts.roboto(color: Colors.white70)),
+                          trailing: Text(DateFormat('dd/MM/yy').format(DateTime.parse(h['date'])), style: GoogleFonts.roboto(color: Colors.white38)),
+                        ),
+                      )).toList(),
+                    ),
+            ),
+          ],
         ),
       ),
     );
