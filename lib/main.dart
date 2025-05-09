@@ -824,42 +824,36 @@ class InvestmentPageState extends State<InvestmentPage> {
                           ),
                           SizedBox(height: 16),
                           SizedBox(
-                            height: 180,
-                            child: LayoutBuilder(
-                              builder: (context, constraints) {
-                                return Flexible(
-                                  child: LineChart(
-                                    LineChartData(
-                                      gridData: FlGridData(show: false),
-                                      titlesData: FlTitlesData(
-                                        leftTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: false),
-                                        ),
-                                        bottomTitles: AxisTitles(
-                                          sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) {
-                                            return Text('${value.toInt()}a', style: TextStyle(color: Colors.orange, fontSize: 10));
-                                          }),
-                                        ),
-                                        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                      ),
-                                      borderData: FlBorderData(show: false),
-                                      lineBarsData: [
-                                        LineChartBarData(
-                                          spots: [
-                                            for (int i = 0; i < _chartData.length; i++)
-                                              FlSpot(i.toDouble(), _chartData[i]),
-                                          ],
-                                          isCurved: true,
-                                          color: Colors.orange,
-                                          barWidth: 3,
-                                          dotData: FlDotData(show: false),
-                                        ),
-                                      ],
-                                    ),
+                            height: 250,
+                            child: LineChart(
+                              LineChartData(
+                                gridData: FlGridData(show: false),
+                                titlesData: FlTitlesData(
+                                  leftTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
                                   ),
-                                );
-                              },
+                                  bottomTitles: AxisTitles(
+                                    sideTitles: SideTitles(showTitles: true, getTitlesWidget: (value, meta) {
+                                      return Text('${value.toInt()}a', style: TextStyle(color: Colors.orange, fontSize: 10));
+                                    }),
+                                  ),
+                                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                ),
+                                borderData: FlBorderData(show: false),
+                                lineBarsData: [
+                                  LineChartBarData(
+                                    spots: [
+                                      for (int i = 0; i < _chartData.length; i++)
+                                        FlSpot(i.toDouble(), _chartData[i]),
+                                    ],
+                                    isCurved: true,
+                                    color: Colors.orange,
+                                    barWidth: 3,
+                                    dotData: FlDotData(show: false),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                           SizedBox(height: 16),
