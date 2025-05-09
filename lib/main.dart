@@ -8,6 +8,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'gemini_keys.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(StockCalcApp());
@@ -207,7 +209,7 @@ class HeaderFooterScaffold extends StatelessWidget {
                           child: Icon(Icons.favorite, color: Colors.red, size: 16),
                         ),
                         TextSpan(
-                          text: ' por Pedro Lazzaroni, Pedro Bevilaqua e Guilherme Biajoli.',
+                          text: ' por Pedro Lazzaroni',
                           style: GoogleFonts.roboto(color: Colors.white70),
                         ),
                       ],
@@ -328,33 +330,83 @@ class AboutPage extends StatelessWidget {
         child: ListView(
           children: [
             Text(
-              'Sobre o StockCalc',
-              style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 22, fontWeight: FontWeight.bold),
+              'Sobre o StockCalc 🚀',
+              style: GoogleFonts.montserrat(
+                color: Colors.orange,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 16),
+            SizedBox(height: 18),
             Text(
-              'O StockCalc é um aplicativo para simular investimentos em ações de forma simples e rápida. Você insere o nome da ação, a rentabilidade média anual, o preço atual, o valor a investir e o tempo. O app calcula o valor futuro estimado do seu investimento.',
+              'O StockCalc é seu copiloto para simular investimentos em ações de qualquer país, de forma simples, visual e inteligente!\n\nFuncionalidades principais:',
               style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 18),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('• 🔎 Busca inteligente de ações por código (ex: PETR4, AAPL, TSLA)', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+                Text('• 💹 Simulação de investimento com aportes e tempo customizáveis', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+                Text('• 📈 Gráfico de evolução do seu investimento', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+                Text('• 📊 Compare diferentes ações e cenários', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+                Text('• 🕓 Histórico dos últimos cálculos realizados', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+                Text('• 🔗 Compartilhe resultados facilmente', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+                Text('• ⚠️ Aviso: os dados vêm da API Gemini 2.0 Flash (Google) e podem não ser precisos (modelo treinado até dez/2023)', style: GoogleFonts.roboto(color: Colors.orange, fontSize: 15)),
+              ],
             ),
             SizedBox(height: 24),
             Text(
-              'Criadores:',
+              'Redes sociais',
               style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
-            SizedBox(height: 8),
-            Text(
-              'Pedro Lazzaroni\nPedro Bevilaqua\nGuilherme Biajoli',
-              style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
-            ),
-            SizedBox(height: 24),
-            Text(
-              'Como funciona:',
-              style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 8),
-            Text(
-              '1. Clique em Iniciar e siga as etapas para inserir os dados.\n2. Veja o resultado do cálculo ao final.\n3. Use o botão Recomeçar para simular novamente.',
-              style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+            SizedBox(height: 10),
+            Center(
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                  icon: SvgPicture.string(
+                    '''
+                    <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path fill="#fff" d="M12 0C5.37 0 0 5.37 0 12a12 12 0 0 0 8.21 11.44c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.23 1.83 1.23 1.07 1.82 2.81 1.29 3.5.98.11-.78.42-1.29.76-1.59-2.66-.3-5.46-1.33-5.46-5.9 0-1.3.47-2.36 1.23-3.19-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.83 1.23 1.89 1.23 3.19 0 4.58-2.8 5.6-5.47 5.9.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12 12 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+                      <path fill="#f4841f" d="M12 0C5.37 0 0 5.37 0 12a12 12 0 0 0 8.21 11.44c.6.11.82-.26.82-.58v-2.04c-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.74.08-.74 1.2.08 1.83 1.23 1.83 1.23 1.07 1.82 2.81 1.29 3.5.98.11-.78.42-1.29.76-1.59-2.66-.3-5.46-1.33-5.46-5.9 0-1.3.47-2.36 1.23-3.19-.12-.3-.53-1.52.12-3.17 0 0 1-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.3-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.17.76.83 1.23 1.89 1.23 3.19 0 4.58-2.8 5.6-5.47 5.9.43.37.81 1.1.81 2.22v3.29c0 .32.22.7.82.58A12 12 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+                    </svg>
+                    ''',
+                  ),
+                  onPressed: () => launchUrl(Uri.parse('https://github.com/pedrolazzaroni')),
+                  tooltip: 'GitHub',
+                  ),
+                  SizedBox(width: 18),
+                  IconButton(
+                    icon: SvgPicture.string(
+                      '''
+                      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7.75 2h8.5A5.75 5.75 0 0 1 22 7.75v8.5A5.75 5.75 0 0 1 16.25 22h-8.5A5.75 5.75 0 0 1 2 16.25v-8.5A5.75 5.75 0 0 1 7.75 2zm0 1.5A4.25 4.25 0 0 0 3.5 7.75v8.5A4.25 4.25 0 0 0 7.75 20.5h8.5A4.25 4.25 0 0 0 20.5 16.25v-8.5A4.25 4.25 0 0 0 16.25 3.5h-8.5zm4.25 3.25a5.25 5.25 0 1 1 0 10.5a5.25 5.25 0 0 1 0-10.5zm0 1.5a3.75 3.75 0 1 0 0 7.5a3.75 3.75 0 0 0 0-7.5zm6.25.75a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0z" fill="#fff"/>
+                        <path d="M12 6.25a5.75 5.75 0 1 1 0 11.5a5.75 5.75 0 0 1 0-11.5zm0 1.5a4.25 4.25 0 1 0 0 8.5a4.25 4.25 0 0 0 0-8.5zm6.25.75a1.25 1.25 0 1 1-2.5 0a1.25 1.25 0 0 1 2.5 0z" fill="#f4841f"/>
+                      </svg>
+                      ''',
+                    ),
+                    onPressed: () => launchUrl(Uri.parse('https://instagram.com/pedro_lazzaroni')),
+                    tooltip: 'Instagram',
+                  ),
+                  SizedBox(width: 18),
+                  IconButton(
+                    icon: SvgPicture.string(
+                      '''
+                      <svg width="32" height="32" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M4.98 3.5C4.98 4.6 4.1 5.5 3 5.5S1 4.6 1 3.5 1.9 1.5 3 1.5s1.98.9 1.98 2ZM2 8.5h2V22H2V8.5Zm5.5 0H10v1.84h.03c.35-.66 1.21-1.35 2.47-1.35 2.64 0 3.13 1.74 3.13 4V22h-2.5v-6.33c0-1.51-.03-3.46-2.11-3.46-2.11 0-2.43 1.65-2.43 3.35V22H7.5V8.5Z" fill="#f4841f"/>
+                      </svg>
+                      ''',
+                    ),
+                    onPressed: () => launchUrl(Uri.parse('https://www.linkedin.com/in/pedrolazzaroni/')),
+                    tooltip: 'LinkedIn',
+                  ),
+                ],
+              ),
             ),
           ],
         ),
