@@ -231,6 +231,12 @@ class HomePage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text(
+              'StockCalc',
+              style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 32, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: 32),
             ClipRRect(
               borderRadius: BorderRadius.circular(32),
               child: Image.asset(
@@ -359,7 +365,7 @@ class StockNamePageState extends State<StockNamePage> {
       final apiKey = geminiApiKey;
       final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-      final prompt = 'Você é um assistente financeiro que responde apenas em JSON. Dado o código de uma ação brasileira e a data de hoje ($today), responda apenas um JSON com os campos: symbol, name, price, annualReturn, monthlyReturn. O campo price deve ser o preço da ação cotado no dia $today, annualReturn é a rentabilidade dos últimos 12 meses (em decimal, ex: 0.12 para 12%), monthlyReturn é a rentabilidade dos últimos 30 dias (em decimal). Se não encontrar, retorne um array vazio.\nAção: $query';
+      final prompt = 'Você é um assistente financeiro que responde apenas em JSON. Dado o código de uma ação de qualquer país e a data de hoje ($today), responda apenas um JSON com os campos: symbol, name, price, annualReturn, monthlyReturn. O campo price deve ser o preço da ação cotado no dia $today, annualReturn é a rentabilidade dos últimos 12 meses (em decimal, ex: 0.12 para 12%), monthlyReturn é a rentabilidade dos últimos 30 dias (em decimal). Se não encontrar, retorne um array vazio.\nAção: $query';
       final body = json.encode({
         'contents': [
           {
@@ -455,8 +461,20 @@ class StockNamePageState extends State<StockNamePage> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'Digite o código da ação (ex: PETR4, VALE3) e clique em Pesquisar.',
+                'Buscar ação',
+                style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 26, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 12),
+              Text(
+                'Digite o código da ação (ex: PETR4, VALE3, AAPL, TSLA) e clique em Pesquisar.',
                 style: GoogleFonts.roboto(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Aviso: Os dados exibidos são fornecidos pela API Gemini 2.0 Flash do Google. Eles podem não ser precisos ou atuais, pois o modelo foi treinado até dezembro de 2023.',
+                style: GoogleFonts.roboto(color: Colors.redAccent, fontSize: 13),
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 24),
