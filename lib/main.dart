@@ -7,7 +7,6 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'api_keys.dart';
 import 'gemini_keys.dart';
 
 void main() {
@@ -358,7 +357,7 @@ class StockNamePageState extends State<StockNamePage> {
     });
     try {
       final apiKey = geminiApiKey;
-      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey;
       final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
       final prompt = 'Você é um assistente financeiro que responde apenas em JSON. Dado o código de uma ação brasileira e a data de hoje ($today), responda apenas um JSON com os campos: symbol, name, price, annualReturn, monthlyReturn. O campo price deve ser o preço da ação cotado no dia $today, annualReturn é a rentabilidade dos últimos 12 meses (em decimal, ex: 0.12 para 12%), monthlyReturn é a rentabilidade dos últimos 30 dias (em decimal). Se não encontrar, retorne um array vazio.\nAção: $query';
       final body = json.encode({
@@ -391,9 +390,11 @@ class StockNamePageState extends State<StockNamePage> {
           });
           return;
         }
+        // Limpa marcações de bloco de código do Gemini
+        final cleaned = content.replaceAll(RegExp(r'```json|```', caseSensitive: false), '').trim();
         dynamic jsonResult;
         try {
-          jsonResult = json.decode(content);
+          jsonResult = json.decode(cleaned);
         } catch (_) {
           setState(() {
             _error = 'Erro ao decodificar resposta da Gemini.';
