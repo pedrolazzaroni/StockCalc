@@ -8,6 +8,7 @@ import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'api_keys.dart';
+import 'gemini_keys.dart';
 
 void main() {
   runApp(StockCalcApp());
@@ -356,41 +357,36 @@ class StockNamePageState extends State<StockNamePage> {
       _error = null;
     });
     try {
-      final apiKey = openAIApiKey;
-      final url = 'https://api.openai.com/v1/chat/completions';
+      final apiKey = geminiApiKey;
+      final url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + apiKey;
+      final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+      final prompt = 'Você é um assistente financeiro que responde apenas em JSON. Dado o código de uma ação brasileira e a data de hoje ($today), responda apenas um JSON com os campos: symbol, name, price, annualReturn, monthlyReturn. O campo price deve ser o preço da ação cotado no dia $today, annualReturn é a rentabilidade dos últimos 12 meses (em decimal, ex: 0.12 para 12%), monthlyReturn é a rentabilidade dos últimos 30 dias (em decimal). Se não encontrar, retorne um array vazio.\nAção: $query';
+      final body = json.encode({
+        'contents': [
+          {
+            'parts': [
+              {'text': prompt}
+            ]
+          }
+        ]
+      });
       final headers = {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + apiKey,
       };
-      final body = json.encode({
-        'model': 'gpt-4.1-nano',
-        'messages': [
-          {
-            'role': 'system',
-            'content': 'Você é um assistente financeiro que responde apenas em JSON. Dado o código de uma ação brasileira, responda apenas um JSON com os campos: symbol, name, price, annualReturn, monthlyReturn. O campo price é o preço atual, annualReturn é a rentabilidade dos últimos 12 meses (em decimal, ex: 0.12 para 12%), monthlyReturn é a rentabilidade dos últimos 30 dias (em decimal). Se não encontrar, retorne um array vazio.'
-          },
-          {
-            'role': 'user',
-            'content': query
-          }
-        ],
-        'max_tokens': 300
-      });
       final res = await http.post(Uri.parse(url), headers: headers, body: body);
-      // DEBUG: imprime status e corpo da resposta
-      print('🔔 [ChatGPT API] statusCode: ${res.statusCode}');
-      print('🔔 [ChatGPT API] body: ${res.body}');
+      print('🔔 [Gemini API] statusCode: ${res.statusCode}');
+      print('🔔 [Gemini API] body: ${res.body}');
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         String? content;
         try {
-          content = data['choices'][0]['message']['content'];
+          content = data['candidates'][0]['content']['parts'][0]['text'];
         } catch (_) {
           content = null;
         }
         if (content == null) {
           setState(() {
-            _error = 'Resposta inesperada da API.';
+            _error = 'Resposta inesperada da API Gemini.';
             _loading = false;
           });
           return;
@@ -400,7 +396,7 @@ class StockNamePageState extends State<StockNamePage> {
           jsonResult = json.decode(content);
         } catch (_) {
           setState(() {
-            _error = 'Erro ao decodificar resposta.';
+            _error = 'Erro ao decodificar resposta da Gemini.';
             _loading = false;
           });
           return;
@@ -439,7 +435,7 @@ class StockNamePageState extends State<StockNamePage> {
         return;
       }
     } catch (e, st) {
-      print('🔴 [ChatGPT API] Exception: ${e}\n${st}');
+      print('🔴 [Gemini API] Exception: ${e}\n${st}');
       setState(() {
         _error = 'Erro de conexão ou parsing.';
         _loading = false;

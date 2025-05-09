@@ -32,7 +32,7 @@ migrate_working_dir/
 .pub-cache/
 .pub/
 /build/
-lib/api_keys.dart
+lib/gemini_keys.dart
 
 # Symbolication related
 app.*.symbols
