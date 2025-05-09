@@ -379,8 +379,6 @@ class StockNamePageState extends State<StockNamePage> {
         'Content-Type': 'application/json',
       };
       final res = await http.post(Uri.parse(url), headers: headers, body: body);
-      print('🔔 [Gemini API] statusCode: ${res.statusCode}');
-      print('🔔 [Gemini API] body: ${res.body}');
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         String? content;
@@ -442,7 +440,6 @@ class StockNamePageState extends State<StockNamePage> {
         return;
       }
     } catch (e, st) {
-      print('🔴 [Gemini API] Exception: ${e}\n${st}');
       setState(() {
         _error = 'Erro de conexão ou parsing.';
         _loading = false;
