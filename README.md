@@ -8,7 +8,7 @@ StockCalc é um aplicativo mobile moderno para simular investimentos em ações 
 - **Simulação de investimento**: Informe o valor inicial, aporte recorrente, período (anual ou mensal) e tempo de investimento. O app calcula o valor futuro estimado do seu investimento.
 - **Gráfico de evolução**: Visualize a evolução do seu investimento ao longo do tempo em um gráfico de linha moderno.
 - **Comparação de ações**: Adicione várias ações para comparar diferentes cenários de investimento.
-- **Histórico de simulações**: Acesse o histórico dos últimos 10 cálculos realizados, com detalhes de cada simulação (ação, investido, valor futuro, tempo e data).
+- **Histórico de simulações**: Acesse o histórico dos últimos cálculos realizados, com detalhes de cada simulação (ação, investido, valor futuro, tempo e data).
 - **Compartilhamento**: Compartilhe o resultado da sua simulação com amigos de forma rápida.
 - **Interface responsiva**: Layout adaptado para diferentes tamanhos de tela, com navegação fluida entre as páginas.
 - **Página Sobre**: Informações sobre o app o criador.
