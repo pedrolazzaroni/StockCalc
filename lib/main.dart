@@ -359,7 +359,7 @@ class AboutPage extends StatelessWidget {
             ),
             SizedBox(height: 24),
             Text(
-              'Redes sociais',
+              'Siga-me nas redes sociais:',
               style: GoogleFonts.montserrat(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold),
               textAlign: TextAlign.center,
             ),
